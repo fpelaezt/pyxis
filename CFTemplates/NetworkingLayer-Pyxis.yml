@@ -61,11 +61,9 @@ Resources:
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Ref VPCName
-      - 
-        Key: Environment
+      - Key: Environment
         Value: !Ref Environment
   PublicSubnet1:
     Type: AWS::EC2::Subnet
@@ -74,8 +72,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet1CIDR
       MapPublicIpOnLaunch: true
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} PublicSubnet1 AZ1 #Comment: Substitutes parameter inside ${}
       VpcId: !Ref myVPC
   PublicSubnet2:
@@ -85,8 +82,7 @@ Resources:
       CidrBlock: !Ref PublicSubnet2CIDR
       MapPublicIpOnLaunch: true
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} PublicSubnet1 AZ2
       VpcId: !Ref myVPC
   PrivateSubnet:
@@ -96,8 +92,7 @@ Resources:
       CidrBlock: !Ref PrivateSubnetCIDR
       MapPublicIpOnLaunch: false
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} PrivateSubnet1 AZ1
       VpcId: !Ref myVPC
   PublicRoute:
@@ -105,16 +100,14 @@ Resources:
     Properties: 
       VpcId: !Ref myVPC
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} PublicRoute
   PrivateRoute:
     Type: AWS::EC2::RouteTable
     Properties: 
       VpcId: !Ref myVPC
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} PrivateRoute
   Public1RouteSubnetAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -135,8 +128,7 @@ Resources:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} IGW
   IGWAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -149,8 +141,7 @@ Resources:
       AllocationId: !GetAtt EIPNATGW.AllocationId
       SubnetId: !Ref PrivateSubnet
       Tags: 
-      -
-        Key: Name
+      - Key: Name
         Value: !Sub ${Environment} NATGWPublic
   EIPNATGW:
     Type: AWS::EC2::EIP
@@ -169,6 +160,27 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NATGWPublic
       RouteTableId: !Ref PrivateRoute
+  ELB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones:
+      - !GetAtt PublicSubnet1.AvailabilityZone
+      - !GetAtt PublicSubnet2.AvailabilityZone
+      CrossZone: true
+      HealthCheck:
+        Target: HTTP:80/
+        HealthyThreshold: 3
+        UnhealthyThreshold: 5
+        Interval: 30
+        Timeout: 5
+      LoadBalancerName: PyxisELB
+      Listeners:
+      - LoadBalancerPort: 80
+        InstancePort: 80
+        Protocol: HTTP
+      Tags:
+      - Key: Name
+        Value: !Sub ${Environment} PublicRoute
 
 Outputs:
   VPCID: 
@@ -212,3 +224,6 @@ Outputs:
   IGWID: 
     Description: A reference to the IGW
     Value: !Ref IGW
+  ELBID: 
+    Description: A reference to the ELB
+    Value: !Ref ELB
