@@ -1,2 +1,0 @@
-# pyxis
-Devops Exercise
