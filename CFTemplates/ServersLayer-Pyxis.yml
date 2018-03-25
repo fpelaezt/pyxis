@@ -20,25 +20,79 @@ Parameters:
     Default: NetworkStackPyxis
 
 Resources:
-  EC2BastionPublicSubnet1:
+  EC2BastionSubnet1:
     Type: AWS::EC2::Instance
     Properties:
       AvailabilityZone:
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-AZPublicSubnet1
+          !Sub ${NetworkStackName}-AZBastionSubnet1
       ImageId: ami-864ce7fe
       InstanceType: t2.micro
       KeyName: DevOps01
       Monitoring: false
       SecurityGroupIds:
-      - !Ref SGPublic
+      - !Ref SGPublicSSH
       SubnetId:
         Fn::ImportValue:
-          !Sub ${NetworkStackName}-PublicSubnet1
+          !Sub ${NetworkStackName}-BastionSubnet1
       Tags: 
       - Key: Name
-        Value: !Sub ${Environment} Instance AZPublicSubnet1
-  SGPublic:
+        Value: !Sub ${Environment} Instance AZBastionubnet1
+  EC2BastionSubnet2:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZBastionSubnet2
+      ImageId: ami-864ce7fe
+      InstanceType: t2.micro
+      KeyName: DevOps01
+      Monitoring: false
+      SecurityGroupIds:
+      - !Ref SGPublicSSH
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-BastionSubnet2
+      Tags: 
+      - Key: Name
+        Value: !Sub ${Environment} Instance AZBastionubnet2
+  EC2WebSubnet1:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZWebSubnet1
+      ImageId: ami-864ce7fe
+      InstanceType: t2.micro
+      KeyName: DevOps01
+      Monitoring: false
+      SecurityGroupIds:
+      - !Ref SGWeb
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-WebSubnet1
+      Tags: 
+      - Key: Name
+        Value: !Sub ${Environment} Instance AZWebSubnet1
+  EC2WebSubnet2:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZWebSubnet2
+      ImageId: ami-864ce7fe
+      InstanceType: t2.micro
+      KeyName: DevOps01
+      Monitoring: false
+      SecurityGroupIds:
+      - !Ref SGWeb
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-WebSubnet2
+      Tags: 
+      - Key: Name
+        Value: !Sub ${Environment} Instance AZWebSubnet1
+  SGPublicSSH:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Enable SSH access via port 22
@@ -53,8 +107,59 @@ Resources:
       Tags: 
       - Key: Name
         Value: !Sub ${Environment} SecurityGroup Public Allow SSH
+  SGWeb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable WEB access via port 80/443
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/25
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${NetworkStackName}-VPCID
+      Tags: 
+      - Key: Name
+        Value: !Sub ${Environment} SecurityGroup Web Access
+  ELB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones:
+      - Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZWebSubnet1
+      - Fn::ImportValue:
+          !Sub ${NetworkStackName}-AZWebSubnet2
+      CrossZone: true
+      HealthCheck:
+        Target: HTTP:80/
+        HealthyThreshold: 3
+        UnhealthyThreshold: 5
+        Interval: 30
+        Timeout: 5
+      LoadBalancerName: PyxisELB
+      Listeners:
+      - LoadBalancerPort: 80
+        InstancePort: 80
+        Protocol: HTTP
+      Instances:
+      - !Ref EC2WebSubnet1
+      - !Ref EC2WebSubnet2
+      Tags:
+      - Key: Name
+        Value: !Sub ${Environment} PublicRoute
 
 Outputs:
-  BastionPublicDNS: 
+  EC2Bastion1: 
     Description: DNS to Instance
-    Value: !GetAtt EC2BastionPublicSubnet1.PublicDnsName
+    Value: !GetAtt EC2BastionSubnet1.PublicDnsName
+  EC2Bastion2: 
+    Description: DNS to Instance
+    Value: !GetAtt EC2BastionSubnet2.PublicDnsName
+  ELBDNS: 
+    Description: DNS to Instance
+    Value: !GetAtt ELB.DNSName
