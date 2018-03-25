@@ -91,7 +91,7 @@ Resources:
           !Sub ${NetworkStackName}-WebSubnet2
       Tags: 
       - Key: Name
-        Value: !Sub ${Environment} Instance AZWebSubnet1
+        Value: !Sub ${Environment} Instance AZWebSubnet2
   SGPublicSSH:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -129,11 +129,11 @@ Resources:
   ELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
-      AvailabilityZones:
+      Subnets:
       - Fn::ImportValue:
-          !Sub ${NetworkStackName}-AZWebSubnet1
+          !Sub ${NetworkStackName}-WebSubnet1
       - Fn::ImportValue:
-          !Sub ${NetworkStackName}-AZWebSubnet2
+          !Sub ${NetworkStackName}-WebSubnet2
       CrossZone: true
       HealthCheck:
         Target: HTTP:80/
@@ -151,7 +151,7 @@ Resources:
       - !Ref EC2WebSubnet2
       Tags:
       - Key: Name
-        Value: !Sub ${Environment} PublicRoute
+        Value: !Sub ${Environment} PublicELB
 
 Outputs:
   EC2Bastion1: 

@@ -1,8 +1,7 @@
 import boto3
 import sys
  
-def create_stack(stack_name = 'MyFirstVPC',file_path = '../CloudFormation/VPC-NotNAT.yml'):
-#def main(stack_name, file_path):
+def create_stack(stack_name,file_path):
     print("Starting stack creation")
     # open the test file from the current diectory
     template = open(file_path).read()
@@ -19,10 +18,10 @@ def create_stack(stack_name = 'MyFirstVPC',file_path = '../CloudFormation/VPC-No
 def main():
     #Create NetworkLayer
     print("Starting Network stack creation")
-    create_stack('NetworkStackPyxis',file_path = '../CloudFormation/NetworkingLayer-Pyxis.yml')
+    create_stack('NetworkStackPyxis',file_path = '../CFTemplates/NetworkingLayer-Pyxis.yml')
     #Create ServerLayer
     print("Starting Server stack creation")
-    create_stack('ServersStackPyxis',file_path = '../CloudFormation/ServersLayer-Pyxis.yml')
+    create_stack('ServersStackPyxis',file_path = '../CFTemplates/ServersLayer-Pyxis.yml')
 
 if __name__ == "__main__":
     main()
